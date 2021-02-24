@@ -165,7 +165,12 @@ config MACH_C1_KOR_KT
 
 config MACH_C1_KOR_LGT
 	bool "LG U+"
+	select FM34_WE395
 endchoice
+
+config C1_LGT_EXPERIMENTAL
+	bool "E210L Experimental Modem Config"
+	depends on MACH_C1_KOR_LGT
 
 choice
 	prompt "M0 KOR Target Carrier"
@@ -269,6 +274,9 @@ config MACH_BAFFIN_KOR_KT
 
 config MACH_BAFFIN_KOR_LGT
 	bool "LG U+"
+
+config MACH_SUPERIOR_KOR_SKT
+	bool "SUPERIOR SKT"
 endchoice
 
 choice

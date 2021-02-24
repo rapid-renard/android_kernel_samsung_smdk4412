@@ -486,7 +486,7 @@ static struct s3cfb_lcd s6e8aa0 = {
 	.bpp = 24,
 
 	.freq = 60,
-#if defined(CONFIG_S6E8AA0_AMS480GYXX)
+#if defined(CONFIG_S6E8AA0_AMS480GYXX) || defined(CONFIG_S6E8AA0_AMS465XX)
 	.freq_limit = 40,
 #endif
 
@@ -944,6 +944,63 @@ out:
 return 0;
 
 }
+#elif defined(CONFIG_S6E8AA0_AMS465XX)
+static int lcd_power_on(void *ld, int enable)
+{
+	struct regulator *regulator;
+	int err;
+
+	printk(KERN_INFO "%s : enable=%d\n", __func__, enable);
+
+	err = gpio_request(GPIO_MLCD_RST, "MLCD_RST");
+	if (err) {
+		printk(KERN_ERR "failed to request GPY4[5] for "
+			"MLCD_RST control\n");
+		return -EPERM;
+	}
+
+#if defined(GPIO_LCD_22V_EN_00)
+	err = gpio_request(GPIO_LCD_22V_EN_00, "LCD_EN");
+	if (err) {
+		printk(KERN_ERR "failed to request GPM4[4] for "
+			"LCD_2.2V_EN control\n");
+		return -EPERM;
+	}
+#endif
+	if (enable) {
+#if defined(GPIO_LCD_22V_EN_00)
+		gpio_set_value(GPIO_LCD_22V_EN_00, GPIO_LEVEL_HIGH);
+#endif
+		regulator = regulator_get(NULL, "vlcd_3.1v");
+
+		if (IS_ERR(regulator))
+			goto out;
+		regulator_enable(regulator);
+		regulator_put(regulator);
+	} else {
+		regulator = regulator_get(NULL, "vlcd_3.1v");
+
+		if (IS_ERR(regulator))
+			goto out;
+		if (regulator_is_enabled(regulator))
+			regulator_force_disable(regulator);
+		regulator_put(regulator);
+
+#if defined(GPIO_LCD_22V_EN_00)
+		gpio_set_value(GPIO_LCD_22V_EN_00, GPIO_LEVEL_LOW);
+#endif
+		gpio_set_value(GPIO_MLCD_RST, 0);
+	}
+
+out:
+/* Release GPIO */
+	gpio_free(GPIO_MLCD_RST);
+#if defined(GPIO_LCD_22V_EN_00)
+	gpio_free(GPIO_LCD_22V_EN_00);
+#endif
+	return 0;
+}
+
 #elif defined(CONFIG_FB_S5P_NT71391)
 static int lcd_power_on(void *ld, int enable)
 {
@@ -1305,3 +1362,14 @@ struct platform_device mdnie_device = {
 #endif
 	},
 };
+
+#if defined(CONFIG_LCD_FREQ_SWITCH)
+struct platform_device lcdfreq_device = {
+		.name		= "lcdfreq",
+		.id		= -1,
+		.dev		= {
+			.parent = &s3c_device_fb.dev,
+			.platform_data = &lcd_panel_pdata.freq_limit
+	},
+};
+#endif

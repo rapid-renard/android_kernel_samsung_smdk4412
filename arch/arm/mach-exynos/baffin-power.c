@@ -36,6 +36,10 @@
 #include <linux/mfd/s5m87xx/s5m-core.h>
 #endif
 
+#if defined(CONFIG_SEC_GPIO_DVS)
+#include <linux/secgpio_dvs.h>
+#endif
+
 #ifdef CONFIG_REGULATOR_MAX8997
 /* MOTOR */
 #ifdef CONFIG_VIBETONZ
@@ -321,12 +325,19 @@ static struct regulator_consumer_supply ldo12_supply[] = {
 	REGULATOR_SUPPLY("votg_3.0v", NULL),
 };
 
+static struct regulator_consumer_supply ldo13_supply[] = {
+	REGULATOR_SUPPLY("tdmb_1.8v", NULL),
+};
+
 static struct regulator_consumer_supply ldo14_supply[] = {
 	REGULATOR_SUPPLY("vabb2_1.95v", NULL),
 };
 
 static struct regulator_consumer_supply ldo17_supply[] = {
 	REGULATOR_SUPPLY("cam_sensor_core_1.2v", NULL),
+#if defined(CONFIG_MACH_SUPERIOR_KOR_SKT)
+	REGULATOR_SUPPLY("vtouch_1.8v", NULL),
+#endif
 };
 
 static struct regulator_consumer_supply ldo18_supply[] = {
@@ -350,7 +361,11 @@ static struct regulator_consumer_supply ldo24_supply[] = {
 };
 
 static struct regulator_consumer_supply ldo25_supply[] = {
+#ifdef CONFIG_MACH_SUPERIOR_KOR_SKT
+	REGULATOR_SUPPLY("vlcd_3.1v", NULL),
+#else
 	REGULATOR_SUPPLY("vlcd_3.3v", NULL),
+#endif
 	REGULATOR_SUPPLY("VCI", "s6e8aa0"),
 #if defined(CONFIG_MACH_SLP_T0_LTE)
 	REGULATOR_SUPPLY("VCI", "ea8061"),
@@ -421,10 +436,17 @@ REGULATOR_INIT(ldo11, "VABB1_1.95V", 1950000, 1950000, 1,
 	       REGULATOR_CHANGE_STATUS, 1);
 REGULATOR_INIT(ldo12, "VUOTG_3.0V", 3000000, 3000000, 1,
 	       REGULATOR_CHANGE_STATUS, 0);
+REGULATOR_INIT(ldo13, "tdmb_1.8v", 1800000, 1800000, 0,
+	       REGULATOR_CHANGE_STATUS, 1);
 REGULATOR_INIT(ldo14, "VABB2_1.95V", 1950000, 1950000, 1,
 	       REGULATOR_CHANGE_STATUS, 1);
+#if defined(CONFIG_MACH_SUPERIOR_KOR_SKT)
+REGULATOR_INIT(ldo17, "VTOUCH_1.8V", 1800000, 1800000, 0,
+	       REGULATOR_CHANGE_STATUS, 1);
+#else
 REGULATOR_INIT(ldo17, "CAM_SENSOR_CORE_1.2V", 1200000, 1200000, 0,
 	       REGULATOR_CHANGE_STATUS, 1);
+#endif
 REGULATOR_INIT(ldo18, "CAM_ISP_SENSOR_1.8V", 1800000, 1800000, 0,
 	       REGULATOR_CHANGE_STATUS, 1);
 REGULATOR_INIT(ldo19, "VT_CAM_1.8V", 1800000, 1800000, 0,
@@ -435,8 +457,13 @@ REGULATOR_INIT(ldo23, "TSP_AVDD_3.3V", 3300000, 3300000, 0,
 	       REGULATOR_CHANGE_STATUS, 1);
 REGULATOR_INIT(ldo24, "VDD_1.8V_TSP", 1800000, 1800000, 0,
 	       REGULATOR_CHANGE_STATUS, 1);
+#ifdef CONFIG_MACH_SUPERIOR_KOR_SKT
+REGULATOR_INIT(ldo25, "VCC_3.1V_LCD", 3100000, 3100000, 0,
+	       REGULATOR_CHANGE_STATUS, 1);
+#else
 REGULATOR_INIT(ldo25, "VCC_3.3V_LCD", 3300000, 3300000, 0,
 	       REGULATOR_CHANGE_STATUS, 1);
+#endif
 REGULATOR_INIT(ldo26, "VCC_MOTOR_3.0V", 3000000, 3000000, 0,
 	       REGULATOR_CHANGE_STATUS, 1);
 
@@ -665,6 +692,14 @@ struct max77686_platform_data exynos4_max77686_info = {
 void midas_power_init(void)
 {
 	printk(KERN_INFO "%s\n", __func__);
+#if defined(CONFIG_SEC_GPIO_DVS)
+	/************************ Caution !!! ****************************/
+	/* This function must be located in an appropriate position for INIT state
+	 * in accordance with the specification of each BB vendor.
+	 */
+	/************************ Caution !!! ****************************/
+	gpio_dvs_check_initgpio();
+#endif
 }
 #endif /* CONFIG_REGULATOR_MAX77686 */
 

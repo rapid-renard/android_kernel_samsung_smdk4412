@@ -770,10 +770,12 @@ unsigned int get_clk_rate(struct platform_device *pdev, struct clk *sclk)
 			if (div%fimd_div == 0)
 				break;
 		}
+
 		div /= fimd_div;
 		div = (div > 16) ? 16 : div;
 	}
 
+							 
 	rate = src_clk / div;
 
 	if ((src_clk % rate) && (div != 1)) {
